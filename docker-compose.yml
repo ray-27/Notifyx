@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: notifyx-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: notifyx
+      MYSQL_USER: notifyx_user
+      MYSQL_PASSWORD: notifyx_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql  # Optional: for initial schema
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - notifyx-network
+
+  notifyx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notifyx-app
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      # Database configuration
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: notifyx_user
+      DB_PASSWORD: notifyx_pass
+      DB_NAME: notifyx
+      
+      # Worker configuration
+      WORKER_COUNT: 10
+      BUFFER_SIZE: 100
+      
+      # Telegram configuration (add your values)
+      TELEGRAM_BOT_TOKEN: your_telegram_bot_token
+      
+      # Email configuration (add your values)
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USERNAME: your_email@gmail.com
+      SMTP_PASSWORD: your_email_password
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - notifyx-network
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  notifyx-network:
+    driver: bridge

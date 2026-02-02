@@ -1,0 +1,30 @@
+# Git files
+.git
+.gitignore
+
+# Documentation
+README.md
+*.md
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# Test files
+*_test.go
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Environment files
+.env
+.env.local
+
+# Temporary files
+tmp/
+temp/
