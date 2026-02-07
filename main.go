@@ -13,15 +13,25 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("No .env file found or failed to load .env file")
+	}
 	// Database configuration from environment variables
 	dbHost := getEnv("DB_HOST", "127.0.0.1")
 	dbPort := getEnv("DB_PORT", "3306")
 	dbUser := getEnv("DB_USER", "user")
 	dbPass := getEnv("DB_PASSWORD", "password")
 	dbName := getEnv("DB_NAME", "notifyx")
+
+	// Build database URL
+	database_url := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4",
+		dbUser, dbPass, dbHost, dbPort, dbName)
 
 	// Worker configuration
 	workerCount := getEnvAsInt("WORKER_COUNT", 10)
@@ -35,10 +45,6 @@ func main() {
 	smtpPort := getEnvAsInt("SMTP_PORT", 587)
 	smtpUsername := getEnv("SMTP_USERNAME", "user@example.com")
 	smtpPassword := getEnv("SMTP_PASSWORD", "password")
-
-	// Build database URL
-	database_url := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4",
-		dbUser, dbPass, dbHost, dbPort, dbName)
 
 	// Initialize database with retry logic
 	if err := database.InitSQL(database_url); err != nil {
@@ -60,7 +66,7 @@ func main() {
 
 	router := server.InitServer(tq)
 	router.Run(":8080")
-	
+
 	log.Printf("Notifyx service started with %d workers\n", workerCount)
 
 	// Example tasks (optional - remove in production or make conditional)
